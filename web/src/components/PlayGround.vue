@@ -1,6 +1,7 @@
 <template>
     <div class="playground">
-        <GameMap />
+        <GameMap :key="mapKey" />
+        <button type="button" class="btn btn-primary" @click="refreshMap">刷新地图</button>
     </div>
 </template>
 
@@ -9,6 +10,16 @@ import GameMap from './GameMap.vue';
 export default {
     components: {
         GameMap
+    },
+    data() {
+        return {
+            mapKey: 0
+        }
+    },
+    methods: {
+        refreshMap() {
+            this.mapKey += 1;
+        }
     }
 }
 </script>
@@ -18,5 +29,9 @@ div.playground {
     margin: 40px auto;
     width: 60vw;
     height: 70vh;
+}
+button {
+    display: block;
+    margin: 20px auto;
 }
 </style>
