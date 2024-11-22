@@ -32,6 +32,7 @@ div.playground {
 }
 button {
     display: block;
+    width: 40%;
     margin: 20px auto;
 }
 </style>
