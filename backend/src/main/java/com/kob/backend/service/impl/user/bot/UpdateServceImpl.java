@@ -3,37 +3,29 @@ package com.kob.backend.service.impl.user.bot;
 import com.kob.backend.mapper.BotMapper;
 import com.kob.backend.pojo.Bot;
 import com.kob.backend.pojo.User;
-import com.kob.backend.service.impl.utils.UserDetailsImpl;
-import com.kob.backend.service.user.bot.AddService;
+import com.kob.backend.service.user.bot.UpdateService;
+import com.kob.backend.utils.UserUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class addServiceImpl implements AddService {
-
+public class UpdateServceImpl implements UpdateService {
     @Autowired
     private BotMapper botMapper;
-
     @Override
-    public Map<String, String> addBot(Map<String, String> data) {
-        UsernamePasswordAuthenticationToken authenticationToken =
-                (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl loginUser = (UserDetailsImpl) authenticationToken.getPrincipal();
-        User user = loginUser.getUser();
+    public Map<String, String> updateBot(Map<String, String> data) {
+        User user = UserUtil.getuser();
 
-
+        int bot_id = Integer.parseInt(data.get("bot_id"));
         String title = data.get("title");
         String description = data.get("description");
-        String content = data.get("content");
-
+        String content =  data.get("content");
         Map<String, String> res = new HashMap<>();
-
         if(title == null || title.isEmpty()) {
             res.put("error_message", "标题不能为空");
             return res;
@@ -62,10 +54,27 @@ public class addServiceImpl implements AddService {
             res.put("error_message", "内容长度不能超过1000");
             return res;
         }
-        Date now = new Date();
-        Bot bot = new Bot(null, user.getId(), title, description, content, 1500, now, now);
-        botMapper.insert(bot);
-        res.put("success_message", "success");
+        Bot bot = botMapper.selectById(bot_id);
+        if(bot == null){
+            res.put("error_message", "Bot不存在或已被删除");
+            return res;
+        }
+        if(!bot.getUserId().equals(user.getId())){
+            res.put("error_message", "无权限修改该Bot");
+            return res;
+        }
+        Bot new_bot = new Bot(
+                bot.getId(),
+                user.getId(),
+                title,
+                description,
+                content,
+                bot.getRating(),
+                bot.getCreatetime(),
+                new Date()
+        );
+        botMapper.updateById(new_bot);
+        res.put("error_message", "success");
         return res;
     }
 }
