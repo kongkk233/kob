@@ -15,7 +15,6 @@ export default {
         updateUser(state, user){
             state.id = user.id
             state.username = user.username
-            state.token = user.token
             state.photo = user.photo
             state.is_login = user.is_login
         },

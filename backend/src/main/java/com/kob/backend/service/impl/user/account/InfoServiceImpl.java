@@ -21,7 +21,7 @@ public class InfoServiceImpl implements InfoService {
             UserDetailsImpl loginUser = (UserDetailsImpl) authenticationToken.getPrincipal();
             User user = loginUser.getUser();
             response.put("error_message", "success");
-            response.put("userid", user.getId().toString());
+            response.put("id", user.getId().toString());
             response.put("username", user.getUsername());
             response.put("photo", user.getPhoto());
         } catch (Exception e) {

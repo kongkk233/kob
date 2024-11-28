@@ -40,9 +40,11 @@ export default {
         let error_message = ref('')
 
         const jwt_token = localStorage.getItem('jwt_token');
-        console.log(jwt_token)
+        // console.log(jwt_token)
         if(jwt_token){
+            // console.log('jwt_token', jwt_token)
             store.commit('updateToken', jwt_token);
+            // console.log('store.state.user.token', store.state.user.token)
             store.dispatch('getInfo', {
                 success(){
                     router.push({ name: 'home' })
