@@ -3,6 +3,7 @@ package com.kob.backend.consumer;
 import com.alibaba.fastjson2.JSONObject;
 import com.kob.backend.consumer.utils.Game;
 import com.kob.backend.consumer.utils.JWTAuthentication;
+import com.kob.backend.mapper.RecordMapper;
 import com.kob.backend.mapper.UserMapper;
 import com.kob.backend.pojo.User;
 import jakarta.websocket.*;
@@ -25,12 +26,20 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WebSocketServer {
     //不是单例的，所以不能用@Autowired注入
     // 单例：每一个类在同一时间只能有一个实例
-    private static UserMapper userMapper;
+    public static UserMapper userMapper;
+    public static RecordMapper recordMapper;
+
     @Autowired
     public void setUserMapper(UserMapper userMapper){
         WebSocketServer.userMapper = userMapper;
     }
-    final private static ConcurrentHashMap<Integer, WebSocketServer> users = new ConcurrentHashMap<>();
+
+    @Autowired
+    public void setRecordMapper(RecordMapper recordMapper){
+        WebSocketServer.recordMapper = recordMapper;
+    }
+
+    final public static ConcurrentHashMap<Integer, WebSocketServer> users = new ConcurrentHashMap<>();
     final private static Set<User> matchPool = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private User user;
     private Session session;
@@ -74,21 +83,35 @@ public class WebSocketServer {
             matchPool.remove(a);
             matchPool.remove(b);
 
-            Game game = new Game(13,14,20);
+            Game game = new Game(13,14,20, a.getId(), b.getId());
             game.createMap();
+            game.start();
+
+            users.get(a.getId()).game = game;
+            users.get(b.getId()).game = game;
+
+            JSONObject respGame = new JSONObject();
+            respGame.put("a_id", game.getPlayerA().getId());
+            respGame.put("a_sx", game.getPlayerA().getSx());
+            respGame.put("a_sy", game.getPlayerA().getSy());
+            respGame.put("b_id", game.getPlayerB().getId());
+            respGame.put("b_sx", game.getPlayerB().getSx());
+            respGame.put("b_sy", game.getPlayerB().getSy());
+            respGame.put("gamemap", game.getG());
+
 
             JSONObject respA = new JSONObject();
             respA.put("event", "matching-success");
             respA.put("username", b.getUsername());
             respA.put("photo", b.getPhoto());
-            respA.put("gamemap", game.getG());
+            respA.put("game", respGame);
             users.get(a.getId()).sendMessage(respA.toJSONString());
 
             JSONObject respB = new JSONObject();
             respB.put("event", "matching-success");
             respB.put("username", a.getUsername());
             respB.put("photo", a.getPhoto());
-            respB.put("gamemap", game.getG());
+            respB.put("game", respGame);
             users.get(b.getId()).sendMessage(respB.toJSONString());
         }
     }
@@ -97,6 +120,15 @@ public class WebSocketServer {
         // 取消匹配
         System.out.println("stop matching");
         matchPool.remove(this.user);
+    }
+
+    private void move(int direction){
+        // 移动
+        if(game.getPlayerA().getId().equals(user.getId())){
+            game.SetNextStepA(direction);
+        }else if(game.getPlayerB().getId().equals(user.getId())){
+            game.SetNextStepB(direction);
+        }
     }
 
     @OnMessage
@@ -111,6 +143,9 @@ public class WebSocketServer {
         }else if("stop-matching".equals(event)){
             //停止匹配
             stopmatching();
+        }else if("move".equals(event)){
+            //移动
+            move(data.getInteger("direction"));
         }
     }
 
